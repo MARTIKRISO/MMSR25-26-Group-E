@@ -3,3 +3,4 @@
 # placeholder like Dataset/.gitkeep in the repo; this pattern allows that file.
 /Dataset/*
 !/Dataset/.gitkeep
+.idea
