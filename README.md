@@ -1,2 +1,1 @@
-# MMSR25/26-Group-E
-
+# Multimedia Search and Retrieval WS25 - Group E
