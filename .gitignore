@@ -1,1 +1,5 @@
-Dataset/*
+# Ignore everything inside Dataset/ but do not permanently ignore the Dataset directory itself.
+# To keep the directory tracked (Git doesn't track empty directories), add a tracked
+# placeholder like Dataset/.gitkeep in the repo; this pattern allows that file.
+/Dataset/*
+!/Dataset/.gitkeep
