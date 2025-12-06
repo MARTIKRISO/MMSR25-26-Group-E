@@ -5,3 +5,4 @@
 !/Dataset/.gitkeep
 .idea
 /UI/venv
+/RetrievalAlgorithm/__pycache__
