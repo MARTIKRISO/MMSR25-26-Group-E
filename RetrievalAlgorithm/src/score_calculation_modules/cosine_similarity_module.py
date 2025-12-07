@@ -2,9 +2,9 @@ import torch
 from torch.nn.functional import cosine_similarity
 
 
-class UnimodalModule(torch.nn.Module):
+class CosineSimilarityModule(torch.nn.Module):
     def __init__(self):
-        super(UnimodalModule, self).__init__()
+        super(CosineSimilarityModule, self).__init__()
 
     def forward(self,
                 query_track: torch.Tensor,
@@ -28,8 +28,8 @@ class UnimodalModule(torch.nn.Module):
 
 if __name__ == '__main__':
     torch.manual_seed(16)
-    unimodal_model = UnimodalModule()
-    unimodal_model.save_as_scripted('../../modules/unimodal_module.pt')
+    unimodal_model = CosineSimilarityModule()
+    unimodal_model.save_as_scripted('../../modules/cosine_similarity_module.pt')
     unimodal_model = torch.jit.script(unimodal_model)
 
     # Single input (D,)

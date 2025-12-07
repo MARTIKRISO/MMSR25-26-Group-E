@@ -5,12 +5,12 @@ from tqdm import tqdm
 import torch
 from torch.utils.data import DataLoader
 from RetrievalAlgorithm.src.datasets import UnimodalPairedTracksDataset
-from RetrievalAlgorithm.src.score_calculation_modules.unimodal_module import UnimodalModule
+from RetrievalAlgorithm.src.score_calculation_modules.cosine_similarity_module import CosineSimilarityModule
 
 
 def calculate_unimodal_similarity(
                                     dataset_df: pd.DataFrame,
-                                    calculation_module: UnimodalModule,
+                                    calculation_module: CosineSimilarityModule,
                                     feature_name: str = 'Lyrics',
                                     batch_size: int = 512,
                                     include_self_pairs: bool = True,
