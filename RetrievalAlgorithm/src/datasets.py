@@ -29,17 +29,17 @@ class UnimodalPairedTracksDataset(Dataset):
         elif include_self_pairs and not include_reverse_pairs:
             self.pairs = torch.tensor(
                 list(itertools.combinations_with_replacement(all_indices, r=2)),
-                dtype=torch.uint32
+                dtype=torch.long
             )
         elif not include_self_pairs and include_reverse_pairs:
             self.pairs = torch.tensor(
                 [(i, j) for i in all_indices for j in all_indices if i != j],
-                dtype=torch.uint32
+                dtype=torch.long
             )
         else:
             self.pairs = torch.tensor(
                 list(itertools.combinations(all_indices, r=2)),
-                dtype=torch.uint32
+                dtype=torch.long
             )
 
     def __len__(self):
