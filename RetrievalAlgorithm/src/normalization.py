@@ -8,6 +8,9 @@ class NormalizationModule(torch.nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         return x
 
+    def fit(self, X_train: torch.Tensor) -> None:
+        pass
+
     @torch.jit.ignore
     def is_scripted(self) -> bool:
         return isinstance(self, torch.jit.ScriptModule)

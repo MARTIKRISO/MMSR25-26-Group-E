@@ -1,16 +1,19 @@
 import os
 import pandas as pd
 from tqdm import tqdm
+from typing import Type
 
 import torch
 from torch.utils.data import DataLoader
 from RetrievalAlgorithm.src.datasets import UnimodalPairedTracksDataset
+from RetrievalAlgorithm.src.normalization import NormalizationModule
 from RetrievalAlgorithm.src.score_calculation_modules.cosine_similarity_module import CosineSimilarityModule
 
 
 def calculate_unimodal_similarity(
                                     dataset_df: pd.DataFrame,
                                     calculation_module: CosineSimilarityModule,
+                                    normalization_module_type: Type[NormalizationModule] = NormalizationModule,
                                     feature_name: str = 'Lyrics',
                                     batch_size: int = 512,
                                     include_self_pairs: bool = True,
@@ -26,6 +29,12 @@ def calculate_unimodal_similarity(
             include_self_pairs=include_self_pairs,
             include_reverse_pairs=include_reverse_pairs,
         )
+
+        normalization_module = normalization_module_type()
+        normalization_module.fit(calculation_dataset.features)
+        normalization_module.to(device)
+        normalization_module = torch.jit.script(normalization_module)
+
         calculation_dataloader = DataLoader(
             dataset=calculation_dataset,
             batch_size=batch_size,
@@ -47,6 +56,10 @@ def calculate_unimodal_similarity(
 
                 feature_1_batch = feature_1_batch.to(device)
                 feature_2_batch = feature_2_batch.to(device)
+
+                feature_1_batch = normalization_module(feature_1_batch)
+                feature_2_batch = normalization_module(feature_2_batch)
+
                 sim_scores_batch = calculation_module(feature_1_batch, feature_2_batch)
                 sim_scores_batch = sim_scores_batch.view(-1)  # flatten to 1D
                 results[f'{feature_name}_similarity'] = torch.cat(
