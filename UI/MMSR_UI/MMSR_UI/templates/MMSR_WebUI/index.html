@@ -1,8 +1,114 @@
 {% extends "partials/base.html" %}
-{% load static %}
-
 {% block content %}
 
-    {% include "partials/header.html" %}
+<div class="min-h-screen bg-purple-50 px-8 py-6">
+
+    <!-- Title -->
+    <h1 class="text-4xl font-semibold text-gray-800 mb-6">
+        Multimedia Search and Retrieval - Group E
+    </h1>
+
+    <!-- Search Panel -->
+    <form method="get" action="" class="flex items-end gap-4 bg-purple-100 p-6 rounded-xl shadow-sm">
+
+        <!-- Search Input -->
+        <div class="flex flex-1 items-center bg-white rounded-full border-2 border-purple-200 px-4 py-2">
+            <input 
+                type="text"
+                name="query"
+                class="flex-1 outline-none bg-transparent"
+                placeholder="Search"
+                value="{{ query }}">
+            <button type="submit" class="text-gray-600 text-xl">🔍</button>
+        </div>
+
+        <!-- Track Count -->
+        <div class="flex flex-col w-28">
+            <label class="text-sm text-gray-600"># of Tracks</label>
+            <input 
+                type="number"
+                name="track_count"
+                class="h-12 border border-gray-300 rounded-md px-2 py-1"
+                value="{{ track_count }}"
+                min="1">
+        </div>
+
+        <!-- Settings Menu -->
+        <div class="relative">
+            <button id="settingsBtn"
+                    type="button"
+                    class="h-12 bg-purple-500 text-white p-3 rounded-lg shadow hover:bg-purple-600"
+                    onclick="toggleSettings()">
+                ⚙
+            </button>
+
+            <div id="settingsMenu"
+                 class="absolute right-0 mt-2 w-48 bg-white border border-gray-300 rounded-xl shadow hidden z-20">
+                
+                <button class="flex items-center justify-between w-full px-4 py-3 text-gray-700 hover:bg-gray-100">
+                    <span>Filter</span>
+                    <span>›</span>
+                </button>
+
+                <button class="flex items-center justify-between w-full px-4 py-3 text-gray-700 hover:bg-gray-100">
+                    <span>Sort by</span>
+                    <span>›</span>
+                </button>
+
+                <button class="flex items-center justify-between w-full px-4 py-3 text-gray-700 hover:bg-gray-100">
+                    <span>Algorithms</span>
+                    <span>›</span>
+                </button>
+
+            </div>
+        </div>
+
+    </form>
+
+    <!-- Results -->
+    <div class="mt-8 space-y-4">
+
+        {% for track in results %}
+        <div class="flex items-center bg-purple-100 rounded-xl p-4 shadow-sm">
+
+            <!-- Placeholder image -->
+            <div class="w-32 h-24 bg-gray-700 rounded-md"></div>
+
+            <!-- Info -->
+            <div class="ml-4 flex-1">
+                <div class="text-lg font-semibold text-gray-800">{{ track.name }}</div>
+                <div class="text-gray-600">
+                    {{ track.artist }}{% if track.album %} - {{ track.album }}{% endif %}
+                    <span class="italic">(if available)</span>
+                </div>
+                <div class="text-gray-700 mt-1">{{ track.genre }}</div>
+            </div>
+
+            <!-- Duration -->
+            <div class="text-right text-gray-700 font-medium">
+                {{ track.duration }}
+            </div>
+
+        </div>
+        {% endfor %}
+
+    </div>
+
+</div>
+
+<!-- Minimal JS -->
+<script>
+function toggleQueryType() {
+    document.getElementById('queryTypeMenu').classList.toggle('hidden');
+}
+function toggleSettings() {
+    document.getElementById('settingsMenu').classList.toggle('hidden');
+}
+function selectQueryType(type) {
+    document.getElementById('queryTypeBtn').children[0].textContent = type;
+    document.getElementById('queryTypeInput').value = type;
+    document.getElementById('queryTypeMenu').classList.add('hidden');
+}
+</script>
 
 {% endblock %}

@@ -56,7 +56,7 @@ ROOT_URLCONF = "MMSR_UI.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [BASE_DIR / "MMSR_UI" / "templates"],
+        "DIRS": [BASE_DIR / "MMSR_UI" / "native_templates"],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -66,6 +66,14 @@ TEMPLATES = [
             ],
         },
     },
+    {
+        "BACKEND": "django.template.backends.jinja2.Jinja2",
+        "DIRS": [BASE_DIR / "MMSR_UI" / "templates"],   # folder for jinja templates
+        "APP_DIRS": True,
+        "OPTIONS": {
+            "environment": "MMSR_UI.jinja2.environment",
+        },
+    }
 ]
 
 WSGI_APPLICATION = "MMSR_UI.wsgi.application"

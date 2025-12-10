@@ -1,24 +1,27 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <title>{% block title %}Multimedia Search & Retrieval - Group E{% endblock %}</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{% block title %}MMSR UI{% endblock %}</title>
 
+    <!-- Tailwind via CDN (good for development) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    {% block head %}{% endblock %}
 </head>
 
-<body style="margin:0; background:#faf7fb;">
+<body class="bg-gray-50 min-h-screen text-gray-900">
 
-    <header>
-        {% block header %}{% endblock %}
+    <!-- Global Navigation (optional) -->
+    <header class="w-full bg-purple-700 text-white py-4 px-8 shadow">
+        <h1 class="text-2xl font-semibold">MMSR Search System</h1>
     </header>
 
-    <!-- Main page content -->
-    <main>
+    <main class="p-8">
         {% block content %}{% endblock %}
     </main>
 
-    <footer>
-        {% block footer %}{% endblock %}
-    </footer>
+    {% block scripts %}{% endblock %}
 </body>
 </html>
