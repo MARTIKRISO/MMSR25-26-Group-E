@@ -87,9 +87,9 @@ DATABASES = {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": BASE_DIR / "db.sqlite3",
     },
-    "MMSR": {
+    "music": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR.parent.parent / "Database" / "db.sqlite3",
+        "NAME": BASE_DIR.parent.parent / "Dataset" / "music.db",
     }
 }
 

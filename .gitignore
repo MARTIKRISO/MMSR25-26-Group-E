@@ -3,6 +3,8 @@
 # placeholder like Dataset/.gitkeep in the repo; this pattern allows that file.
 /Dataset/*
 !/Dataset/.gitkeep
+!/Dataset/music.db
+/Data/*
 .idea
 /UI/venv
 /RetrievalAlgorithm/__pycache__

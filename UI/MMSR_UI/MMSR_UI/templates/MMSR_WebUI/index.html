@@ -5,12 +5,11 @@
 
     <!-- Title -->
     <h1 class="text-4xl font-semibold text-gray-800 mb-6">
-        Multimedia Search and Retrieval - Group E
+        <a href="/">MMSR Group E - Music Search System</a>
     </h1>
 
     <!-- Search Panel -->
     <form method="get" action="" class="flex items-end gap-4 bg-purple-100 p-6 rounded-xl shadow-sm">
-
         <!-- Search Input -->
         <div class="flex flex-1 items-center bg-white rounded-full border-2 border-purple-200 px-4 py-2">
             <input 
@@ -45,28 +44,33 @@
             <div id="settingsMenu"
                  class="absolute right-0 mt-2 w-48 bg-white border border-gray-300 rounded-xl shadow hidden z-20">
                 
-                <button class="flex items-center justify-between w-full px-4 py-3 text-gray-700 hover:bg-gray-100">
-                    <span>Filter</span>
-                    <span>›</span>
+                <button type="button" onclick="openDialog('sort')" 
+                        class="flex items-center justify-between w-full px-4 py-3 text-gray-700 hover:bg-gray-100">
+                    <span>Sort by</span><span>›</span>
                 </button>
 
-                <button class="flex items-center justify-between w-full px-4 py-3 text-gray-700 hover:bg-gray-100">
-                    <span>Sort by</span>
-                    <span>›</span>
+                <button type="button" onclick="openDialog('filter')" 
+                        class="flex items-center justify-between w-full px-4 py-3 text-gray-700 hover:bg-gray-100">
+                    <span>Filter</span><span>›</span>
                 </button>
 
-                <button class="flex items-center justify-between w-full px-4 py-3 text-gray-700 hover:bg-gray-100">
-                    <span>Algorithms</span>
-                    <span>›</span>
+                <button type="button" onclick="openDialog('algorithm')" 
+                        class="flex items-center justify-between w-full px-4 py-3 text-gray-700 hover:bg-gray-100">
+                    <span>Algorithms</span><span>›</span>
                 </button>
 
             </div>
         </div>
 
+        <!-- Placeholders for sort_by, filter_by, and algorithm -->
+        <input type="hidden" name="sort_by" id="sortByInput" value="{{ sort_by }}">
+        <input type="hidden" name="filter_by" id="filterByInput" value="{{ filter_by }}">
+        <input type="hidden" name="algorithm" id="algorithmInput" value="{{ algorithm }}">
+
     </form>
 
     <!-- Results -->
-    <div class="mt-8 space-y-4">
+    <div class="mt-8 h-[600px] overflow-y-auto space-y-4">
 
         {% for track in results %}
         <div class="flex items-center bg-purple-100 rounded-xl p-4 shadow-sm">
@@ -76,7 +80,7 @@
 
             <!-- Info -->
             <div class="ml-4 flex-1">
-                <div class="text-lg font-semibold text-gray-800">{{ track.name }}</div>
+                <div class="text-lg font-semibold text-gray-800">{{ track.title }}</div>
                 <div class="text-gray-600">
                     {{ track.artist }}{% if track.album %} - {{ track.album }}{% endif %}
                     <span class="italic">(if available)</span>
@@ -93,11 +97,133 @@
         {% endfor %}
 
     </div>
+    <!-- Modal Overlay -->
+    <div id="dialogOverlay"
+        class="fixed inset-0 bg-black bg-opacity-40 hidden z-30 flex items-center justify-center">
+
+        <!-- Modal Box -->
+        <div class="bg-white rounded-xl shadow-xl p-6 w-96">
+
+            <h2 id="dialogTitle" class="text-xl font-semibold text-gray-800 mb-4"></h2>
+
+            <div id="dialogOptions" class="space-y-2">
+                <!-- List items injected dynamically -->
+            </div>
+
+            <div class="mt-6 flex justify-end gap-2">
+                <button onclick="closeDialog()"
+                        class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
 
 </div>
 
-<!-- Minimal JS -->
+<!-- JS -->
 <script>
+const dialogConfig = {
+    sort: {
+        title: "Sort by",
+        inputId: "sortByInput",
+        options: [
+            { value: "default", label: "Title" },
+            { value: "artist", label: "Artist Name" },
+            { value: "duration", label: "Song Duration" }
+        ]
+    },
+    filter: {
+        title: "Filter by Genre",
+        inputId: "filterByInput",
+        options: [
+            { value: "default", label: "No Filter" },
+            { value: "rock", label: "Rock" },
+            { value: "pop", label: "Pop" },
+            { value: "jazz", label: "Jazz" }
+        ]
+    },
+    algorithm: {
+        title: "Algorithm",
+        inputId: "algorithmInput",
+        options: [
+            { value: "default", label: "Default Algorithm (something)" }, //TODO: Set default algorithm
+            { value: "random", label: "Random Baseline" },
+            { value: "unimodal", label: "Unimodal" },
+            { value: "early_fusion", label: "Early Fusion" },
+            { value: "late_fusion", label: "Late Fusion" }
+        ]
+    }
+};
+
+function openDialog(type) {
+    document.body.style.overflow = "hidden";
+    const cfg = dialogConfig[type];
+    const inputElem = document.getElementById(cfg.inputId);
+    let currentValue = ""
+    // Default selection = first option if no previous value
+    if (inputElem.value.includes(" ")) {
+        currentValue = cfg.options[0].value;
+    }
+    else {
+        currentValue = inputElem.value;
+    }
+    console.log("Current value:", currentValue);
+    console.log("Config value:", cfg.options[0].value);
+    console.log("Input elem value:", inputElem.value);
+
+    document.getElementById("dialogTitle").textContent = cfg.title;
+
+    const listHtml = cfg.options.map(opt => `
+        <button type="button"
+            class="option-btn w-full flex justify-between items-center px-4 py-2 border rounded-lg hover:bg-purple-50
+                ${currentValue === opt.value ? 'selected-option' : ''}"
+            onclick="selectOption('${cfg.inputId}', '${opt.value}', this)"
+            data-value="${opt.value}">
+            
+            <span>${opt.label}</span>
+
+            ${
+                currentValue === opt.value
+                ? '<span class="tickmark text-purple-600 font-bold">✓</span>'
+                : ''
+            }
+        </button>
+    `).join("");
+
+    document.getElementById("dialogOptions").innerHTML = listHtml;
+
+    document.getElementById("dialogOverlay").classList.remove("hidden");
+    document.getElementById("settingsMenu").classList.add("hidden");
+}
+
+function selectOption(inputId, value, btn) {
+    document.getElementById(inputId).value = value;
+
+    // Reset all
+    document.querySelectorAll("#dialogOptions .option-btn").forEach(el => {
+        el.classList.remove("selected-option");
+        const tick = el.querySelector(".tickmark");
+        if (tick) tick.remove();
+    });
+
+    // Highlight selected + add tick
+    btn.classList.add("selected-option");
+    btn.insertAdjacentHTML("beforeend", '<span class="tickmark text-purple-600 font-bold">✓</span>');
+}
+
+function closeDialog() {
+    document.getElementById("dialogOverlay").classList.add("hidden");
+    document.body.style.overflow = ""
+}
+
+// Close on ESC
+document.addEventListener("keydown", function(e) {
+    if (e.key === "Escape") {
+        closeDialog();
+    }
+});
+
 function toggleQueryType() {
     document.getElementById('queryTypeMenu').classList.toggle('hidden');
 }
@@ -109,6 +235,19 @@ function selectQueryType(type) {
     document.getElementById('queryTypeInput').value = type;
     document.getElementById('queryTypeMenu').classList.add('hidden');
 }
+
+document.addEventListener("keydown", function(e) {
+    if (e.key === "Escape") {
+        closeDialog();
+    }
+});
+
 </script>
+
+<style>
+    .selected-option {
+        @apply bg-purple-100 border-purple-400;
+    }
+</style>
 
 {% endblock %}
