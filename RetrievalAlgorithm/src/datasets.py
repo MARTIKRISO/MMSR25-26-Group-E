@@ -2,37 +2,41 @@ import pandas as pd
 from typing import Tuple, List
 import torch
 from torch.utils.data import Dataset
-import itertools
 from functools import reduce
 
 
 def _generate_pairs(
-        all_indices: List[int],
-        include_self_pairs: bool = False,
-        include_reverse_pairs: bool = False,
-    ) -> torch.Tensor:
+    all_indices: torch.Tensor,
+    include_self_pairs: bool = False,
+    include_reverse_pairs: bool = False
+) -> torch.Tensor:
+    n = all_indices.size(0)
+
+    # Create a grid of indices
+    i = all_indices.view(-1, 1).expand(-1, n)
+    j = all_indices.view(1, -1).expand(n, -1)
+
     if include_self_pairs and include_reverse_pairs:
-        return torch.tensor(
-            list(itertools.product(all_indices, all_indices)),
-            dtype=torch.long
-        )
+        # All pairs (i,j)
+        pairs = torch.stack((i.flatten(), j.flatten()), dim=1)
+        return pairs
 
     if include_self_pairs and not include_reverse_pairs:
-        return torch.tensor(
-            list(itertools.combinations_with_replacement(all_indices, r=2)),
-            dtype=torch.long
-        )
+        # Upper triangular including diagonal
+        mask = torch.triu(torch.ones(n, n, dtype=torch.bool))
+        pairs = torch.stack((i[mask], j[mask]), dim=1)
+        return pairs
 
     if not include_self_pairs and include_reverse_pairs:
-        return torch.tensor(
-            [(i, j) for i in all_indices for j in all_indices if i != j],
-            dtype=torch.long
-        )
+        # Remove diagonal
+        mask = ~torch.eye(n, dtype=torch.bool)
+        pairs = torch.stack((i[mask], j[mask]), dim=1)
+        return pairs
 
-    return torch.tensor(
-        list(itertools.combinations(all_indices, r=2)),
-        dtype=torch.long
-    )
+    # No self pairs, no reverse pairs: upper triangular without diagonal
+    mask = torch.triu(torch.ones(n, n, dtype=torch.bool), diagonal=1)
+    pairs = torch.stack((i[mask], j[mask]), dim=1)
+    return pairs
 
 
 class UnimodalPairedTracksDataset(Dataset):
@@ -49,8 +53,9 @@ class UnimodalPairedTracksDataset(Dataset):
         self.features = torch.tensor(
             dataset_df.drop(columns=['id']).values,
             dtype=torch.float32,
-        )
-        all_indices = list(range(len(self.ids)))
+        ).pin_memory()
+
+        all_indices = torch.arange(len(self.ids))
         self.pairs = _generate_pairs(
             all_indices=all_indices,
             include_self_pairs=include_self_pairs,
@@ -84,8 +89,9 @@ class MultimodalPairedTracksDataset(Dataset):
         self.features = torch.tensor(
             merged_df.drop(columns=['id']).values,
             dtype=torch.float32,
-        )
-        all_indices = list(range(len(self.ids)))
+        ).pin_memory()
+
+        all_indices = torch.arange(len(self.ids))
         self.pairs = _generate_pairs(
             all_indices=all_indices,
             include_self_pairs=include_self_pairs,

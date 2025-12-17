@@ -1,0 +1,5 @@
+unimodal:
+  batch_size: 8192
+
+multimodal:
+  batch_size: 4096

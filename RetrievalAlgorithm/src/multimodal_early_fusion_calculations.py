@@ -22,7 +22,7 @@ def calculate_multimodal_similarity(
         calculation_module.to(device)
         calculation_module.eval()
 
-        num_workers = max(2, os.cpu_count()-2)
+        num_workers = 0 if torch.cuda.is_available() else max(2, os.cpu_count() - 2)
         calculation_dataset = MultimodalPairedTracksDataset(
             datasets_df=datasets_df,
             include_self_pairs=include_self_pairs,
@@ -45,7 +45,7 @@ def calculate_multimodal_similarity(
         results = {
             'id_1': [],
             'id_2': [],
-            f'score': torch.empty(0).to(device),
+            'score': [],
         }
 
         with torch.no_grad():
@@ -56,17 +56,15 @@ def calculate_multimodal_similarity(
                 feature_1_batch = feature_1_batch.to(device)
                 feature_2_batch = feature_2_batch.to(device)
 
-                feature_1_batch = normalization_module(feature_1_batch)
-                feature_2_batch = normalization_module(feature_2_batch)
+                with torch.amp.autocast(device_type='cuda', dtype=torch.float16):
+                    feature_1_batch = normalization_module(feature_1_batch)
+                    feature_2_batch = normalization_module(feature_2_batch)
+                    sim_scores_batch = calculation_module(feature_1_batch, feature_2_batch).view(-1)
 
-                sim_scores_batch = calculation_module(feature_1_batch, feature_2_batch)
-                sim_scores_batch = sim_scores_batch.view(-1)  # flatten to 1D
-                results[f'score'] = torch.cat(
-                    tensors=[results[f'score'], sim_scores_batch],
-                    dim=0
-                ).cpu()
+                results['score'].append(sim_scores_batch)
                 del feature_1_batch, feature_2_batch, sim_scores_batch
 
+        results['score'] = torch.cat(results['score']).cpu()
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
         results[f'score'] = results[f'score']
