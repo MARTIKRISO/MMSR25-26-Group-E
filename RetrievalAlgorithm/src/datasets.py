@@ -53,7 +53,10 @@ class UnimodalPairedTracksDataset(Dataset):
         self.features = torch.tensor(
             dataset_df.drop(columns=['id']).values,
             dtype=torch.float32,
-        ).pin_memory()
+        )
+
+        if torch.cuda.is_available():
+            self.features = self.features.pin_memory()
 
         all_indices = torch.arange(len(self.ids))
         self.pairs = _generate_pairs(
@@ -89,7 +92,10 @@ class MultimodalPairedTracksDataset(Dataset):
         self.features = torch.tensor(
             merged_df.drop(columns=['id']).values,
             dtype=torch.float32,
-        ).pin_memory()
+        )
+
+        if torch.cuda.is_available():
+            self.features = self.features.pin_memory()
 
         all_indices = torch.arange(len(self.ids))
         self.pairs = _generate_pairs(
