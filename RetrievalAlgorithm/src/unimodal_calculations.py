@@ -14,7 +14,6 @@ def calculate_unimodal_similarity(
                                     dataset_df: pd.DataFrame,
                                     calculation_module: CosineSimilarityModule,
                                     normalization_module_type: Type[NormalizationModule] = NormalizationModule,
-                                    feature_name: str = 'Lyrics',
                                     batch_size: int = 512,
                                     include_self_pairs: bool = True,
                                     include_reverse_pairs: bool = True,
@@ -46,7 +45,7 @@ def calculate_unimodal_similarity(
         results = {
             'id_1': [],
             'id_2': [],
-            f'{feature_name}_similarity': torch.empty(0).to(device),
+            f'score': torch.empty(0).to(device),
         }
 
         with torch.no_grad():
@@ -62,14 +61,14 @@ def calculate_unimodal_similarity(
 
                 sim_scores_batch = calculation_module(feature_1_batch, feature_2_batch)
                 sim_scores_batch = sim_scores_batch.view(-1)  # flatten to 1D
-                results[f'{feature_name}_similarity'] = torch.cat(
-                    [results[f'{feature_name}_similarity'], sim_scores_batch],
+                results[f'score'] = torch.cat(
+                    [results[f'score'], sim_scores_batch],
                     dim=0
                 ).cpu()
                 del feature_1_batch, feature_2_batch, sim_scores_batch
 
         if torch.cuda.is_available():
             torch.cuda.empty_cache()
-        results[f'{feature_name}_similarity'] = results[f'{feature_name}_similarity']
+        results[f'score'] = results[f'score']
 
         return pd.DataFrame(results)
