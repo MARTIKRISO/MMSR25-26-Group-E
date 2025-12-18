@@ -1,5 +1,5 @@
 unimodal:
-  batch_size: 8192
+  batch_size: 1024
 
 multimodal:
-  batch_size: 4096
+  batch_size: 1024

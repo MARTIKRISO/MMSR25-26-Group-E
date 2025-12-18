@@ -56,7 +56,7 @@ def calculate_multimodal_similarity(
                 feature_1_batch = feature_1_batch.to(device)
                 feature_2_batch = feature_2_batch.to(device)
 
-                with torch.amp.autocast(device_type='cuda', dtype=torch.float16):
+                with torch.amp.autocast(device_type=device.type):
                     feature_1_batch = normalization_module(feature_1_batch)
                     feature_2_batch = normalization_module(feature_2_batch)
                     sim_scores_batch = calculation_module(feature_1_batch, feature_2_batch).view(-1)
