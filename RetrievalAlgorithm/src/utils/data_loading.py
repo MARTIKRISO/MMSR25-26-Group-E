@@ -41,3 +41,15 @@ def load_all_tsv_files_from_path(
     dataframes: Dict[str, pd.DataFrame] = {name: df for name, df in results}
 
     return dataframes
+
+
+def load_parquet_files_from_dir(parquet_target_dir: str) -> Dict[str, pd.DataFrame]:
+    parquet_files = [
+        f for f in tqdm(os.listdir(parquet_target_dir), desc='Loading Parquet Files')
+        if f.endswith('.parquet')
+    ]
+
+    return {
+        filename: pd.read_parquet(os.path.join(parquet_target_dir, filename))
+        for filename in parquet_files
+    }
