@@ -27,7 +27,7 @@ def _combine_score_dfs(score_dfs: List[pd.DataFrame]) -> pd.DataFrame:
     return merged_df
 
 
-def _standard_normalize_df(df: pd.DataFrame) -> pd.DataFrame:
+def _standardize_df(df: pd.DataFrame) -> pd.DataFrame:
     df_normalized = df.copy()
     numeric_cols = df.select_dtypes(include='number').columns
 
@@ -41,13 +41,3 @@ def _standard_normalize_df(df: pd.DataFrame) -> pd.DataFrame:
             df_normalized[col] = 0
 
     return df_normalized
-
-
-def calculate_late_fusion_max_scores(score_dfs: List[pd.DataFrame]) -> pd.DataFrame:
-    combined_df = _combine_score_dfs(score_dfs=score_dfs)
-    normalized_df = _standard_normalize_df(df=combined_df)
-
-    result_df = normalized_df[['id_1', 'id_2']].copy()
-    result_df['score'] = normalized_df.drop(columns=['id_1', 'id_2']).max(axis=1)
-
-    return result_df
