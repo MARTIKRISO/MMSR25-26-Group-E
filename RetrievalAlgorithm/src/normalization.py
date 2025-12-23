@@ -36,8 +36,17 @@ class MinMaxNormalizationModule(NormalizationModule):
         self._x_max = X_train.amax(dim=0, keepdim=True)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = (x - self._x_min) / (self._x_max - self._x_min)
-        return x
+        # denom shape: (1, D)
+        denom = self._x_max - self._x_min
+
+        # Avoid division by zero for constant features
+        denom = torch.where(
+            denom == 0,
+            torch.ones_like(denom),
+            denom,
+        )
+
+        return (x - self._x_min) / denom
 
 
 # [-1; 1] (preserves 0s which maybe good)
@@ -50,8 +59,15 @@ class MaxAbsNormalizationModule(NormalizationModule):
         self._x_max = X_train.amax(dim=0, keepdim=True)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = x / torch.abs(self._x_max)
-        return x
+        denom = torch.abs(self._x_max)
+
+        denom = torch.where(
+            denom == 0,
+            torch.ones_like(denom),
+            denom,
+        )
+
+        return x / denom
 
 
 # this Normalization technique was used in the TD3+BC paper
