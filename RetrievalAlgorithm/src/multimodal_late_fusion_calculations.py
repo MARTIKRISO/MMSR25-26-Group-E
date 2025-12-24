@@ -19,8 +19,6 @@ def _get_rank_pairs_df(scores_df: pd.DataFrame) -> pd.DataFrame:
     df_backward = scores_df.rename(columns={'id_2': 'query', 'id_1': 'target'})
     # Prevent self pairs to be included twice
     df_backward = df_backward[df_backward['query'] != df_backward['target']]
-    print(len(df_forward))
-    print(len(df_backward))
 
     df = pd.concat([df_forward, df_backward], ignore_index=True)
 
@@ -34,9 +32,6 @@ def _get_rank_pairs_df(scores_df: pd.DataFrame) -> pd.DataFrame:
               .astype('int32')
                       - 1
         )
-        print('Col:', col)
-        print(len(df))
-        print(df.isna().any())
     return df
 
 
