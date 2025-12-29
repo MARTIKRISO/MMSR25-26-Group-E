@@ -55,7 +55,7 @@ def get_eval_metrics_for_each_query(
     eval_songs_df: pd.DataFrame,
     genres_columns: List[str],
     metric_at_k: Callable = precision_at_k,
-    n_jobs: int = None
+    n_jobs: int = os.cpu_count()-2
 ) -> pd.DataFrame:
 
     if n_jobs is None:
