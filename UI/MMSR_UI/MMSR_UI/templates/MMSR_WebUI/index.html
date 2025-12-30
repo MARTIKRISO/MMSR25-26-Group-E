@@ -58,14 +58,22 @@
                         class="flex items-center justify-between w-full px-4 py-3 text-gray-700 hover:bg-gray-100">
                     <span>Algorithms</span><span>›</span>
                 </button>
+                <button type="button" onclick="openDialog('normalization')" 
+                        class="flex items-center justify-between w-full px-4 py-3 text-gray-700 hover:bg-gray-100">
+                    <span>Normalization</span><span>›</span>
+                </button>
+
 
             </div>
         </div>
 
-        <!-- Placeholders for sort_by, filter_by, and algorithm -->
-        <input type="hidden" name="sort_by" id="sortByInput" value="{{ sort_by }}">
-        <input type="hidden" name="filter_by" id="filterByInput" value="{{ filter_by }}">
-        <input type="hidden" name="algorithm" id="algorithmInput" value="{{ algorithm }}">
+        <!-- Placeholders for sort_by, filter_by, algorithm and modalities -->
+        <input type="hidden" name="sort_by" id="sortByInput" value="">
+        <input type="hidden" name="filter_by" id="filterByInput" value="">
+        <input type="hidden" name="algorithm" id="algorithmInput" value="">
+        <input type="hidden" name="modalities" id="modalitiesInput" value="">
+        <input type="hidden" name="normalization" id="normalizationInput" value="">
+
 
     </form>
 
@@ -87,11 +95,14 @@
                 </div>
                 <div class="text-gray-700 mt-1">{{ track.genre }}</div>
             </div>
-
             <!-- Duration -->
-            <div class="text-right text-gray-700 font-medium">
-                {{ track.duration }}
+            <div class="text-right text-gray-700 font-medium flex flex-col items-end">
+                <div>{{ track.duration }}</div>
+                <div class="text-sm text-gray-600 mt-1">
+                    Score: {{ track.score }}
+                </div>
             </div>
+            
 
         </div>
         {% endfor %}
@@ -128,13 +139,14 @@ const dialogConfig = {
         title: "Sort by",
         inputId: "sortByInput",
         options: [
-            { value: "default", label: "Title" },
+            { value: "default", label: "Relevance" },
+            { value: "title", label: "Title"},
             { value: "artist", label: "Artist Name" },
             { value: "duration", label: "Song Duration" }
         ]
     },
     filter: {
-        title: "Filter by Genre",
+        title: "Filter",
         inputId: "filterByInput",
         options: [
             { value: "default", label: "No Filter" },
@@ -151,9 +163,30 @@ const dialogConfig = {
             { value: "random", label: "Random Baseline" },
             { value: "unimodal", label: "Unimodal" },
             { value: "early_fusion", label: "Early Fusion" },
-            { value: "late_fusion", label: "Late Fusion" }
+            { value: "late_fusion", label: "Late Fusion" },
+            { value: "nn", label: "Neural Network" }
         ]
-    }
+    },
+    modalities: {
+        options: [
+            { value: "lyrics", label: "Lyrics" },
+            { value: "audio", label: "Audio" },
+            { value: "video", label: "Video" }
+        ]
+    },
+    normalization: {
+        title: "Normalization",
+        inputId: "normalizationInput",
+        options: [
+            { value: "raw", label: "Raw (no normalization)" },
+            { value: "max_abs", label: "Max-Abs" },
+            { value: "min_max", label: "Min-Max" },
+            { value: "standard", label: "Standard" },
+            { value: "rebust", label: "Robust" }
+        ]
+    },
+    
+    
 };
 
 function openDialog(type) {
@@ -209,7 +242,24 @@ function selectOption(inputId, value, btn) {
 
     // Highlight selected + add tick
     btn.classList.add("selected-option");
-    btn.insertAdjacentHTML("beforeend", '<span class="tickmark text-purple-600 font-bold">✓</span>');
+    btn.insertAdjacentHTML(
+        "beforeend",
+        '<span class="tickmark text-purple-600 font-bold">✓</span>'
+    );
+
+    // Algorithm → open modality dialog
+    if (inputId === "algorithmInput") {
+        if (value === "unimodal") {
+            openModalityDialog(1);
+        }
+        else if (["early_fusion", "late_fusion", "nn"].includes(value)) {
+            openModalityDialog(2);
+        }
+        else {
+            document.getElementById("modalitiesInput").value = "";
+            closeDialog();
+        }
+    }
 }
 
 function closeDialog() {
@@ -241,6 +291,55 @@ document.addEventListener("keydown", function(e) {
         closeDialog();
     }
 });
+
+let requiredModalities = 0;
+let selectedModalities = [];
+
+function openModalityDialog(count) {
+    requiredModalities = count;
+    selectedModalities = [];
+
+    document.getElementById("dialogTitle").textContent =
+        count === 1 ? "Select a modality" : "Select two modalities";
+
+    const listHtml = dialogConfig.modalities.options.map(opt => `
+        <button type="button"
+            class="option-btn w-full flex justify-between items-center px-4 py-2 border rounded-lg hover:bg-purple-50"
+            onclick="toggleModality('${opt.value}', this)">
+            <span>${opt.label}</span>
+        </button>
+    `).join("");
+
+    document.getElementById("dialogOptions").innerHTML = listHtml;
+}
+
+function toggleModality(value, btn) {
+    const idx = selectedModalities.indexOf(value);
+
+    if (idx !== -1) {
+        // Deselect
+        selectedModalities.splice(idx, 1);
+        btn.classList.remove("selected-option");
+        const tick = btn.querySelector(".tickmark");
+        if (tick) tick.remove();
+    }
+    else {
+        if (selectedModalities.length >= requiredModalities) return;
+
+        selectedModalities.push(value);
+        btn.classList.add("selected-option");
+        btn.insertAdjacentHTML(
+            "beforeend",
+            '<span class="tickmark text-purple-600 font-bold">✓</span>'
+        );
+    }
+
+    if (selectedModalities.length === requiredModalities) {
+        document.getElementById("modalitiesInput").value =
+            selectedModalities.join(" ");
+        closeDialog();
+    }
+}
 
 </script>
 

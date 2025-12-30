@@ -7,9 +7,11 @@ def index(request):
     query      = request.GET.get("query") or ""
     track_cnt  = request.GET.get("track_count") or "10"
     
-    sort_by    = request.GET.get("sort_by") or "default"
-    filter_by  = request.GET.get("filter_by") or "default"
+    sort_by    = request.GET.get("sort_by") or "relevance"
+    filter_by  = request.GET.get("filter_by") or "none"
     algorithm  = request.GET.get("algorithm") or "default"
+    modalitiesInput = request.GET.get("modalitiesInput")
+    normalizationInput = request.GET.get("normalizationInput") or "raw"
 
     try:
         track_cnt = int(track_cnt)
