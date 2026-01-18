@@ -13,6 +13,7 @@ def plot_describe_heatmaps(
     x_label: str = '',
     y_label: str = '',
     fig_title: str = '',
+    decimal_positions: int = 2
 ):
     describe_tables = {}
     global_min, global_max = np.inf, -np.inf
@@ -45,12 +46,13 @@ def plot_describe_heatmaps(
             vmax=global_max,
             cbar=ax is axes[-1],
             annot=True,
-            fmt='.2f'
+            fmt=f'.{decimal_positions}f'
         )
         ax.set_title(name)
         # Remove individual x and y labels
         ax.set_xlabel('')
         ax.set_ylabel('')
+        ax.tick_params(axis='x', labelrotation=90)
 
     if x_label:
         fig.supxlabel(x_label, fontsize=12)
@@ -67,7 +69,10 @@ def plot_metrics_at_k(modality_dfs: List[Dict[str, pd.DataFrame]],
                                modality_names: List[str],
                                k_values: List[int] = [5, 10, 20, 50, 100, 200],
                                fig_subtitle: str = 'Precision@k for Different Modalities and Normalizations',
-                               y_label: str = 'Precision@k'):
+                               y_label: str = 'Precision@k',
+                               y_lim_low: float = 0,
+                               y_lim_high: float = 1,
+                        ):
     n_modalities = len(modality_dfs)
     fig, axes = plt.subplots(1, n_modalities, figsize=(6 * n_modalities, 5), sharey=True)
 
@@ -82,7 +87,7 @@ def plot_metrics_at_k(modality_dfs: List[Dict[str, pd.DataFrame]],
         ax.set_title(modality_name)
         ax.set_xlabel('k')
         ax.set_xticks(k_values)
-        ax.set_ylim(0, 1)
+        ax.set_ylim(y_lim_low, y_lim_high)
         ax.grid(True)
         ax.legend()
 
