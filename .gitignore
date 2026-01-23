@@ -7,5 +7,6 @@
 /Data/*
 .idea
 /UI/venv
+/UI/Data
 /RetrievalAlgorithm/__pycache__
 /RetrievalAlgorithm/results

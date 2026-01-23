@@ -1,0 +1,466 @@
+{% extends "partials/base.html" %}
+{% block content %}
+
+<div class="min-h-screen bg-purple-50 px-8 py-6">
+
+    <!-- Title -->
+    <h1 class="text-4xl font-semibold text-gray-800 mb-6">
+        <a href="/">MMSR Group E - Music Search System</a>
+    </h1>
+
+    <!-- Search Panel -->
+    <form method="get" action="" class="flex items-end gap-4 bg-purple-100 p-6 rounded-xl shadow-sm">
+        <!-- Search Input -->
+        <div class="flex flex-1 items-center bg-white rounded-full border-2 border-purple-200 px-4 py-2">
+            <input type="text" name="query" class="flex-1 outline-none bg-transparent" placeholder="Search"
+                value="{{ query }}">
+            <button type="submit" class="text-gray-600 text-xl">🔍</button>
+        </div>
+
+        <!-- Track Count -->
+        <div class="flex flex-col w-28">
+            <label class="text-sm text-gray-600"># of Tracks</label>
+            <input type="number" name="track_count" class="h-12 border border-gray-300 rounded-md px-2 py-1"
+                value="{{ track_count }}" min="1">
+        </div>
+
+        <!-- Settings Menu -->
+        <div class="relative">
+            <button id="settingsBtn" type="button"
+                class="h-12 bg-purple-500 text-white p-3 rounded-lg shadow hover:bg-purple-600"
+                onclick="toggleSettings()">
+                ⚙
+            </button>
+
+            <div id="settingsMenu"
+                class="absolute right-0 mt-2 w-48 bg-white border border-gray-300 rounded-xl shadow hidden z-20">
+
+                <button type="button" onclick="openDialog('sort')"
+                    class="flex items-center justify-between w-full px-4 py-3 text-gray-700 hover:bg-gray-100">
+                    <span>Sort by</span><span>›</span>
+                </button>
+
+                <button type="button" onclick="openDialog('filter')"
+                    class="flex items-center justify-between w-full px-4 py-3 text-gray-700 hover:bg-gray-100">
+                    <span>Filter</span><span>›</span>
+                </button>
+
+                <button type="button" onclick="openDialog('algorithm')"
+                    class="flex items-center justify-between w-full px-4 py-3 text-gray-700 hover:bg-gray-100">
+                    <span>Algorithms</span><span>›</span>
+                </button>
+                <button type="button" onclick="openDialog('normalization')"
+                    class="flex items-center justify-between w-full px-4 py-3 text-gray-700 hover:bg-gray-100">
+                    <span>Normalization</span><span>›</span>
+                </button>
+
+
+            </div>
+        </div>
+
+        <!-- Placeholders for sort_by, filter_by, algorithm and modalities -->
+        <input type="hidden" name="sort_by" id="sortByInput" value="{{ sort_by }}">
+        <input type="hidden" name="filter_by" id="filterByInput" value="{{ filter_by }}">
+        <input type="hidden" name="algorithm" id="algorithmInput" value="{{ algorithm }}">
+        <input type="hidden" name="modalities" id="modalitiesInput" value="{{ modalities }}">
+        <input type="hidden" name="normalization" id="normalizationInput" value="{{ normalization }}">
+
+
+    </form>
+
+    <!-- Results -->
+    <!-- Main Content Grid -->
+    <div class="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6 h-[600px]">
+
+        <!-- Left Column: Results -->
+        <div class="overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+            {% for track in results %}
+            <div class="flex items-center bg-purple-100 rounded-xl p-4 shadow-sm hover:shadow-md transition-shadow">
+
+                {% if track.url %}
+                <a href="{{ track.url | youtube_watch_url }}" target="_blank"
+                    class="w-32 aspect-video bg-gray-700 rounded-md overflow-hidden flex-shrink-0 relative group">
+                    <img src="{{ track.url | youtube_thumbnail }}" alt="{{ track.song }}"
+                        class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-110">
+                    <div
+                        class="absolute inset-0 bg-black/20 group-hover:bg-black/40 transition-colors flex items-center justify-center">
+                        <div
+                            class="w-8 h-8 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white opacity-0 group-hover:opacity-100 transition-opacity">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 fill-current" viewBox="0 0 24 24">
+                                <path d="M8 5v14l11-7z" />
+                            </svg>
+                        </div>
+                    </div>
+                </a>
+                {% endif %}
+
+                <!-- Info -->
+                <div class="ml-4 flex-1 min-w-0">
+                    <div class="text-lg font-semibold text-gray-800 truncate" title="{{ track.song }}">{{ track.song }}
+                    </div>
+                    <div class="text-sm text-gray-600 truncate">
+                        {{ track.artist }}{% if track.album %} - {{ track.album }}{% endif %}
+                    </div>
+                    <div class="text-xs text-gray-500 mt-1">{{ track.genre }}</div>
+                </div>
+
+                <!-- Score -->
+                <div class="ml-2 text-right">
+                    {% if track.score %}
+                    <div class="text-sm font-bold text-purple-600">
+                        {{ track.score | round(3) }}
+                    </div>
+                    <div class="text-xs text-gray-500">score</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% else %}
+            <div class="text-center text-gray-500 py-10">
+                No results found. Try a different query.
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Right Column: Metrics & Config -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 overflow-y-auto">
+
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 border-b pb-2">Metrics</h2>
+
+            <!-- Metrics Grid -->
+            <div class="grid grid-cols-2 gap-4 mb-8">
+                {% for key, value in metrics.items() %}
+                <div class="bg-purple-50 p-4 rounded-lg text-center">
+                    <div class="text-3xl font-bold text-purple-600">{{ value }}</div>
+                    <div class="text-sm text-gray-600 uppercase tracking-wide mt-1">{{ key }}</div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Current Configuration -->
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">Current Configuration</h3>
+            <div class="space-y-3">
+
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span class="text-gray-600">Algorithm</span>
+                    <span class="font-medium text-purple-700 bg-purple-100 px-3 py-1 rounded-full text-sm">
+                        {{ algorithm | replace('_', ' ') | title }}
+                    </span>
+                </div>
+
+                <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                    <span class="text-gray-600">Normalization</span>
+                    <span class="font-medium text-blue-700 bg-blue-100 px-3 py-1 rounded-full text-sm">
+                        {{ normalization | replace('_', ' ') | title }}
+                    </span>
+                </div>
+
+                <div class="flex justify-between items-start p-3 bg-gray-50 rounded-lg">
+                    <span class="text-gray-600">Modalities</span>
+                    <div id="modalitiesDisplay" class="flex flex-wrap gap-2 justify-end">
+                        {% if modalities %}
+                        {% for modality in modalities.split() %}
+                        <span class="font-medium text-green-700 bg-green-100 px-3 py-1 rounded-full text-sm">
+                            {{ modality | title }}
+                        </span>
+                        {% endfor %}
+                        {% else %}
+                        <span class="text-gray-400 text-sm">None</span>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+    <!-- Modal Overlay -->
+    <div id="dialogOverlay" class="fixed inset-0 bg-black bg-opacity-40 hidden z-30 flex items-center justify-center">
+
+        <!-- Modal Box -->
+        <div class="bg-white rounded-xl shadow-xl p-6 w-96">
+
+            <h2 id="dialogTitle" class="text-xl font-semibold text-gray-800 mb-4"></h2>
+
+            <div id="dialogOptions" class="space-y-2">
+                <!-- List items injected dynamically -->
+            </div>
+
+            <div class="mt-6 flex justify-end gap-2">
+                <button onclick="closeDialog()" class="px-4 py-2 bg-gray-300 rounded-lg hover:bg-gray-400">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- JS -->
+<script>
+    const dialogConfig = {
+        sort: {
+            title: "Sort by",
+            inputId: "sortByInput",
+            options: [
+                { value: "default", label: "Score" },
+                { value: "song", label: "Title" },
+                { value: "artist", label: "Artist" },
+            ]
+        },
+        filter: {
+            title: "Filter",
+            inputId: "filterByInput",
+            options: [
+                { value: "default", label: "No Filter" },
+                { value: "artist", label: "Artist" },
+                { value: "genre", label: "Genre" },
+            ]
+        },
+        algorithm: {
+            title: "Algorithm",
+            inputId: "algorithmInput",
+            options: [
+                { value: "random", label: "Random Baseline" },
+                { value: "unimodal", label: "Unimodal" },
+                { value: "early_fusion", label: "Early Fusion" },
+                { value: "late_fusion", label: "Late Fusion" },
+                { value: "nn", label: "Neural Network" }
+            ]
+        },
+        modalities: {
+            options: [
+                { value: "lyrics", label: "Lyrics" },
+                { value: "audio", label: "Audio" },
+                { value: "video", label: "Video" }
+            ]
+        },
+        normalization: {
+            title: "Normalization",
+            inputId: "normalizationInput",
+            options: [
+                { value: "raw", label: "Raw (no normalization)" },
+                { value: "max_abs", label: "Max-Abs" },
+                { value: "min_max", label: "Min-Max" },
+                { value: "standard", label: "Standard" },
+                { value: "robust", label: "Robust" }
+            ]
+        },
+
+
+    };
+
+    function openDialog(type) {
+        document.body.style.overflow = "hidden";
+        const cfg = dialogConfig[type];
+        const inputElem = document.getElementById(cfg.inputId);
+        let currentValue = ""
+        // Default selection = first option if no previous value
+        if (inputElem.value.includes(" ")) {
+            currentValue = cfg.options[0].value;
+        }
+        else {
+            currentValue = inputElem.value;
+        }
+        console.log("Current value:", currentValue);
+        console.log("Config value:", cfg.options[0].value);
+        console.log("Input elem value:", inputElem.value);
+
+        document.getElementById("dialogTitle").textContent = cfg.title;
+
+        const listHtml = cfg.options.map(opt => `
+        <button type="button"
+            class="option-btn w-full flex justify-between items-center px-4 py-2 border rounded-lg hover:bg-purple-50
+                ${currentValue === opt.value ? 'selected-option' : ''}"
+            onclick="selectOption('${cfg.inputId}', '${opt.value}', this)"
+            data-value="${opt.value}">
+            
+            <span>${opt.label}</span>
+
+            ${currentValue === opt.value
+                ? '<span class="tickmark text-purple-600 font-bold">✓</span>'
+                : ''
+            }
+        </button>
+    `).join("");
+
+        document.getElementById("dialogOptions").innerHTML = listHtml;
+
+        document.getElementById("dialogOverlay").classList.remove("hidden");
+        document.getElementById("settingsMenu").classList.add("hidden");
+    }
+
+    function updateConfigurationDisplay(inputId, value) {
+        // Find the label text for the selected value
+        let labelText = value;
+
+        if (inputId === "algorithmInput") {
+            const algorithmOption = dialogConfig.algorithm.options.find(opt => opt.value === value);
+            if (algorithmOption) {
+                labelText = algorithmOption.label;
+            }
+            // Update the algorithm display in the UI
+            const algorithmDisplay = document.querySelector('.flex.justify-between.items-center.p-3.bg-gray-50.rounded-lg span.font-medium.text-purple-700');
+            if (algorithmDisplay) {
+                algorithmDisplay.textContent = labelText;
+            }
+        } else if (inputId === "normalizationInput") {
+            const normalizationOption = dialogConfig.normalization.options.find(opt => opt.value === value);
+            if (normalizationOption) {
+                labelText = normalizationOption.label;
+            }
+            // Update the normalization display in the UI
+            const normalizationDisplay = document.querySelector('.flex.justify-between.items-center.p-3.bg-gray-50.rounded-lg span.font-medium.text-blue-700');
+            if (normalizationDisplay) {
+                normalizationDisplay.textContent = labelText;
+            }
+        }
+    }
+
+    function selectOption(inputId, value, btn) {
+        document.getElementById(inputId).value = value;
+
+        // Reset all
+        document.querySelectorAll("#dialogOptions .option-btn").forEach(el => {
+            el.classList.remove("selected-option");
+            const tick = el.querySelector(".tickmark");
+            if (tick) tick.remove();
+        });
+
+        // Highlight selected + add tick
+        btn.classList.add("selected-option");
+        btn.insertAdjacentHTML(
+            "beforeend",
+            '<span class="tickmark text-purple-600 font-bold">✓</span>'
+        );
+
+        // Update the configuration display
+        updateConfigurationDisplay(inputId, value);
+
+        // Algorithm → open modality dialog
+        if (inputId === "algorithmInput") {
+            if (value === "unimodal") {
+                openModalityDialog(1);
+            }
+            else if (["early_fusion", "late_fusion", "nn"].includes(value)) {
+                openModalityDialog(2);
+            }
+            else {
+                document.getElementById("modalitiesInput").value = "";
+                updateModalitiesDisplay([]);
+                closeDialog();
+            }
+        } else {
+            // For normalization and other options, close the dialog
+            closeDialog();
+        }
+    }
+
+    function closeDialog() {
+        document.getElementById("dialogOverlay").classList.add("hidden");
+        document.body.style.overflow = ""
+    }
+
+    // Close on ESC
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") {
+            closeDialog();
+        }
+    });
+
+    function toggleQueryType() {
+        document.getElementById('queryTypeMenu').classList.toggle('hidden');
+    }
+    function toggleSettings() {
+        document.getElementById('settingsMenu').classList.toggle('hidden');
+    }
+    function selectQueryType(type) {
+        document.getElementById('queryTypeBtn').children[0].textContent = type;
+        document.getElementById('queryTypeInput').value = type;
+        document.getElementById('queryTypeMenu').classList.add('hidden');
+    }
+
+    document.addEventListener("keydown", function (e) {
+        if (e.key === "Escape") {
+            closeDialog();
+        }
+    });
+
+    let requiredModalities = 0;
+    let selectedModalities = [];
+
+    function openModalityDialog(count) {
+        requiredModalities = count;
+        selectedModalities = [];
+
+        document.getElementById("dialogTitle").textContent =
+            count === 1 ? "Select a modality" : "Select two modalities";
+
+        const listHtml = dialogConfig.modalities.options.map(opt => `
+        <button type="button"
+            class="option-btn w-full flex justify-between items-center px-4 py-2 border rounded-lg hover:bg-purple-50"
+            onclick="toggleModality('${opt.value}', this)">
+            <span>${opt.label}</span>
+        </button>
+    `).join("");
+
+        document.getElementById("dialogOptions").innerHTML = listHtml;
+    }
+
+    function toggleModality(value, btn) {
+        const idx = selectedModalities.indexOf(value);
+
+        if (idx !== -1) {
+            // Deselect
+            selectedModalities.splice(idx, 1);
+            btn.classList.remove("selected-option");
+            const tick = btn.querySelector(".tickmark");
+            if (tick) tick.remove();
+        }
+        else {
+            if (selectedModalities.length >= requiredModalities) return;
+
+            selectedModalities.push(value);
+            btn.classList.add("selected-option");
+            btn.insertAdjacentHTML(
+                "beforeend",
+                '<span class="tickmark text-purple-600 font-bold">✓</span>'
+            );
+        }
+
+        if (selectedModalities.length === requiredModalities) {
+            document.getElementById("modalitiesInput").value =
+                selectedModalities.join(" ");
+
+            // Update the modalities display in the UI
+            updateModalitiesDisplay(selectedModalities);
+
+            closeDialog();
+        }
+    }
+
+    function updateModalitiesDisplay(modalities) {
+        const modalitiesDisplay = document.getElementById("modalitiesDisplay");
+        if (!modalitiesDisplay) return;
+
+        if (modalities.length === 0) {
+            modalitiesDisplay.innerHTML = '<span class="text-gray-400 text-sm">None</span>';
+        } else {
+            const badges = modalities.map(modality => {
+                const label = modality.charAt(0).toUpperCase() + modality.slice(1);
+                return `<span class="font-medium text-green-700 bg-green-100 px-3 py-1 rounded-full text-sm">${label}</span>`;
+            }).join('');
+            modalitiesDisplay.innerHTML = badges;
+        }
+    }
+
+
+</script>
+
+<style>
+    .selected-option {
+        @apply bg-purple-100 border-purple-400;
+    }
+</style>
+
+{% endblock %}
