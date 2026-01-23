@@ -34,8 +34,39 @@ def build_retrieval_index(scores_df: pd.DataFrame) -> Dict[str, List[str]]:
         .to_dict()
     )
 
+def build_rrf_retrieval_index(scores_df: pd.DataFrame) -> Dict[str, List[str]]:
+    # Defensive copy of only what we need
+    df = scores_df[['query', 'target', 'score']].copy()
+    # Optional safety: remove self-matches if present
+    df = df[df['query'] != df['target']]
+
+    df = df.sort_values(
+        ['query', 'score'],
+        ascending=[True, False]
+    )
+
+    return (
+        df
+        .groupby('query')['target']
+        .apply(list)
+        .to_dict()
+    )
+
 
 def _eval_single_query(args):
+    query_id, retrieved_list, k, eval_songs_df, genres_columns, metric_at_k = args
+    return (
+        query_id,
+        metric_at_k(
+            query_id=query_id,
+            retrieved_ids=retrieved_list[:k],
+            k=k,
+            songs_df=eval_songs_df,
+            genre_columns=genres_columns
+        )
+    )
+
+def _eval_single_rrf_query(args):
     query_id, retrieved_list, k, eval_songs_df, genres_columns, metric_at_k = args
     return (
         query_id,
@@ -88,6 +119,61 @@ def get_eval_metrics_for_each_query(
 
         result_indices_dfs.append(
             pd.DataFrame(list(results.items()), columns=['query_id', f'@k{k}'])
+        )
+
+    merged_df = reduce(
+        lambda left, right: pd.merge(left, right, on='query_id'),
+        result_indices_dfs
+    )
+
+    return merged_df
+
+
+def get_rrf_eval_metrics_for_each_query(
+    scores_df: pd.DataFrame,
+    k_range: List[int],
+    eval_songs_df: pd.DataFrame,
+    genres_columns: List[str],
+    metric_at_k: Callable = precision_at_k,
+    n_jobs: int | None = None
+) -> pd.DataFrame:
+    if n_jobs is None:
+        n_jobs = max(1, os.cpu_count() - 1)
+
+    result_indices_dfs = []
+
+    retrieval_index_dict = build_rrf_retrieval_index(scores_df)
+
+    for k in k_range:
+        print('-' * 100)
+        print('k =', k)
+
+        tasks = [
+            (query_id, retrieved_list, k, eval_songs_df, genres_columns, metric_at_k)
+            for query_id, retrieved_list in retrieval_index_dict.items()
+        ]
+
+        results: Dict[str, float] = {}
+
+        with ProcessPoolExecutor(max_workers=n_jobs) as executor:
+            futures = [
+                executor.submit(_eval_single_rrf_query, t)
+                for t in tasks
+            ]
+
+            for future in tqdm(
+                as_completed(futures),
+                total=len(futures),
+                desc=f'Evaluated RRF queries at k={k}'
+            ):
+                query_id, score = future.result()
+                results[query_id] = score
+
+        result_indices_dfs.append(
+            pd.DataFrame(
+                list(results.items()),
+                columns=['query_id', f'@k{k}']
+            )
         )
 
     merged_df = reduce(
