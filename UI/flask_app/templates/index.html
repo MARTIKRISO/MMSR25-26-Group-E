@@ -5,11 +5,11 @@
 
     <!-- Title -->
     <h1 class="text-4xl font-semibold text-gray-800 mb-6">
-        <a href="/">MMSR Group E - Music Search System</a>
+        <a href="/">Multimedia Search and Retrieval: Practical Project - Music Search System</a>
     </h1>
 
     <!-- Search Panel -->
-    <form method="get" action="" class="flex items-end gap-4 bg-purple-100 p-6 rounded-xl shadow-sm">
+    <form id="searchForm" method="get" action="" class="flex items-end gap-4 bg-purple-100 p-6 rounded-xl shadow-sm">
         <!-- Search Input -->
         <div class="flex flex-1 items-center bg-white rounded-full border-2 border-purple-200 px-4 py-2">
             <input type="text" name="query" class="flex-1 outline-none bg-transparent" placeholder="Search"
@@ -143,14 +143,14 @@
                 <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <span class="text-gray-600">Algorithm</span>
                     <span class="font-medium text-purple-700 bg-purple-100 px-3 py-1 rounded-full text-sm">
-                        {{ algorithm | replace('_', ' ') | title }}
+                        {{ algorithm_label }}
                     </span>
                 </div>
 
                 <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
                     <span class="text-gray-600">Normalization</span>
                     <span class="font-medium text-blue-700 bg-blue-100 px-3 py-1 rounded-full text-sm">
-                        {{ normalization | replace('_', ' ') | title }}
+                        {{ normalization_label }}
                     </span>
                 </div>
 
@@ -225,6 +225,7 @@
                 { value: "unimodal", label: "Unimodal" },
                 { value: "early_fusion", label: "Early Fusion" },
                 { value: "late_fusion", label: "Late Fusion" },
+                { value: "rrf", label: "Late Fusion (RRF)" },
                 { value: "nn", label: "Neural Network" }
             ]
         },
@@ -342,7 +343,7 @@
             if (value === "unimodal") {
                 openModalityDialog(1);
             }
-            else if (["early_fusion", "late_fusion", "nn"].includes(value)) {
+            else if (["early_fusion", "late_fusion", "rrf", "nn"].includes(value)) {
                 openModalityDialog(2);
             }
             else {
@@ -408,14 +409,39 @@
     }
 
     function toggleModality(value, btn) {
+        const algo = document.getElementById("algorithmInput").value;
         const idx = selectedModalities.indexOf(value);
 
-        if (idx !== -1) {
-            // Deselect
+        if (idx !== -1 && algo !== "nn") {
+            // Deselect for non-NN (normal toggle)
             selectedModalities.splice(idx, 1);
             btn.classList.remove("selected-option");
             const tick = btn.querySelector(".tickmark");
             if (tick) tick.remove();
+        }
+        else if (idx !== -1 && algo === "nn") {
+            // Special NN logic: 
+            // If already selected twice, remove one.
+            // If selected once, either add another or (if we wanted) remove.
+            // Let's make it: if it's in there, click adds another IF there's space.
+            // If no space and we click something already there, maybe we remove it?
+
+            const count = selectedModalities.filter(m => m === value).length;
+            if (selectedModalities.length < requiredModalities) {
+                selectedModalities.push(value);
+                if (count === 0) btn.classList.add("selected-option");
+                btn.innerHTML = `<span>${value.charAt(0).toUpperCase() + value.slice(1)}</span> <span class="tickmark text-purple-600 font-bold">✓${selectedModalities.filter(m => m === value).length > 1 ? 'x2' : ''}</span>`;
+            } else {
+                // If full, remove one instance of the clicked one
+                selectedModalities.splice(idx, 1);
+                const newCount = selectedModalities.filter(m => m === value).length;
+                if (newCount === 0) {
+                    btn.classList.remove("selected-option");
+                    btn.innerHTML = `<span>${value.charAt(0).toUpperCase() + value.slice(1)}</span>`;
+                } else {
+                    btn.innerHTML = `<span>${value.charAt(0).toUpperCase() + value.slice(1)}</span> <span class="tickmark text-purple-600 font-bold">✓</span>`;
+                }
+            }
         }
         else {
             if (selectedModalities.length >= requiredModalities) return;
@@ -446,13 +472,50 @@
         if (modalities.length === 0) {
             modalitiesDisplay.innerHTML = '<span class="text-gray-400 text-sm">None</span>';
         } else {
-            const badges = modalities.map(modality => {
+            // Group modalities to show x2 if needed
+            const counts = {};
+            modalities.forEach(m => counts[m] = (counts[m] || 0) + 1);
+
+            const badges = Object.keys(counts).map(modality => {
                 const label = modality.charAt(0).toUpperCase() + modality.slice(1);
-                return `<span class="font-medium text-green-700 bg-green-100 px-3 py-1 rounded-full text-sm">${label}</span>`;
+                const countBadge = counts[modality] > 1 ? ` x${counts[modality]}` : '';
+                return `<span class="font-medium text-green-700 bg-green-100 px-3 py-1 rounded-full text-sm">${label}${countBadge}</span>`;
             }).join('');
             modalitiesDisplay.innerHTML = badges;
         }
     }
+
+    // Form Validation
+    document.getElementById("searchForm").addEventListener("submit", function (e) {
+        const algo = document.getElementById("algorithmInput").value;
+        const modalitiesStr = document.getElementById("modalitiesInput").value;
+        const modalities = modalitiesStr ? modalitiesStr.split(" ") : [];
+
+        if (algo === "unimodal") {
+            if (modalities.length !== 1) {
+                alert("Unimodal algorithm requires exactly 1 modality.");
+                e.preventDefault();
+                return;
+            }
+        } else if (["early_fusion", "late_fusion", "rrf"].includes(algo)) {
+            if (modalities.length !== 2) {
+                alert("Algorithm " + algo.replace("_", " ").toUpperCase() + " requires exactly 2 modalities.");
+                e.preventDefault();
+                return;
+            }
+            if (modalities[0] === modalities[1]) {
+                alert("Algorithm " + algo.replace("_", " ").toUpperCase() + " requires 2 DIFFERENT modalities.");
+                e.preventDefault();
+                return;
+            }
+        } else if (algo === "nn") {
+            if (modalities.length !== 2) {
+                alert("Neural Network algorithm requires exactly 2 modalities.");
+                e.preventDefault();
+                return;
+            }
+        }
+    });
 
 
 </script>

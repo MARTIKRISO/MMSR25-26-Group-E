@@ -38,6 +38,21 @@ def index():
             modalities= modalities,
             normalization= normalization
         )
+    algorithm_labels = {
+        "random": "Random Baseline",
+        "unimodal": "Unimodal",
+        "early_fusion": "Early Fusion",
+        "late_fusion": "Late Fusion",
+        "rrf": "Late Fusion (RRF)",
+        "nn": "Neural Network"
+    }
+    normalization_labels = {
+        "raw": "Raw (no normalization)",
+        "max_abs": "Max-Abs",
+        "min_max": "Min-Max",
+        "standard": "Standard",
+        "robust": "Robust"
+    }
 
     context = {
         "query": query,
@@ -48,7 +63,9 @@ def index():
         "modalities": modalities,
         "normalization": normalization,
         "results": results,
-        "metrics": metrics
+        "metrics": metrics,
+        "algorithm_label": algorithm_labels.get(algorithm, algorithm.replace('_', ' ').title()),
+        "normalization_label": normalization_labels.get(normalization, normalization.replace('_', ' ').title())
     }
 
     return render_template("index.html", **context)

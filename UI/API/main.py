@@ -65,9 +65,9 @@ def prettify_results(df):
 def calculate_metrics(query_id, retrieved_ids, k, songs_df):
     metrics = {
         "precision": round(precision_at_k(query_id, retrieved_ids, k, songs_df), 3),
+        "ndcg": round(ndcg_at_k(query_id, retrieved_ids, k, songs_df), 3),
         "recall": round(recall_at_k(query_id, retrieved_ids, k, songs_df), 3),
         "f1": round(f1_at_k(query_id, retrieved_ids, k, songs_df), 3),
-        "ndcg": round(ndcg_at_k(query_id, retrieved_ids, k, songs_df), 3)
     }
     return metrics
 
@@ -89,15 +89,23 @@ async def get_rank(query: str, track_cnt: int, sort_by: str, filter_by: str, alg
             df["score"] = 1
             df.rename(columns={"id": "id_2"}, inplace=True)
             df["id_1"] = query_track_id
-        elif modalities.count(r" "):
+        elif algorithm in ["late_fusion", "early_fusion", "rrf", "nn"]:
             modals = sorted(modalities.split(r" "))
-            print(f"Running Multimodal with {modals}")
+            print(f"Running {algorithm} with {modals}")
             if algorithm == "late_fusion":
                 tt = data["multimodal"][algorithm][f"{normalization}_similarity_scores.parquet"].copy()
                 df, query_track_id = get_results(query, tt)
             elif algorithm == "early_fusion":
                 tt = data["multimodal"][algorithm][normalization][f"{'_'.join(modals)}_similarity_scores.parquet"].copy()
                 df, query_track_id = get_results(query, tt)
+            elif algorithm == "rrf":
+                tt = data["multimodal"][algorithm][f"{normalization}_similarity_scores.parquet"].copy()
+                tt.rename(columns={"query": "id_1", "target": "id_2"}, inplace=True)
+                df, query_track_id = get_results(query, tt)
+            elif algorithm == "nn":
+                tt = data["nn"]["max_scores"][f"{'_'.join(modals)}_max_scores.parquet"].copy()
+                df, query_track_id = get_results(query, tt)
+
         else:
             print(f"Running Unimodal with {modalities}")
             #unimodal
