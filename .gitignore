@@ -4,6 +4,7 @@
 /Dataset/*
 !/Dataset/.gitkeep
 !/Dataset/music.db
+!/Dataset/music.db.backup
 /Data/*
 .idea
 /UI/venv
