@@ -21,6 +21,9 @@ def _calculate_and_save_unimodal_metric(feature_name: str,
         output_norm_dir = os.path.join(target_dir, norm_name)
         output_path = os.path.join(output_norm_dir,
                                    metric_at_k_name,
+        )
+        os.makedirs(output_path, exist_ok=True)
+        output_path = os.path.join(output_path,
                                    f'unimodal_{norm_name}_{feature_name}_{metric_at_k_name}.parquet')
         if os.path.exists(output_path):
             print(f'Skipping {norm_name}')
@@ -55,10 +58,13 @@ def _calculate_and_save_multimodal_metric(
     os.makedirs(target_dir, exist_ok=True)
 
     for norm_name in norm_names:
-        output_norm_dir = os.path.join(target_dir, norm_name)
-        output_path = os.path.join(output_norm_dir,
-                                   metric_at_k_name,
+        output_path = os.path.join(target_dir,
+                                   norm_name,
+                                   metric_at_k_name)
+        os.makedirs(output_path, exist_ok=True)
+        output_path = os.path.join(output_path,
                                    f'multimodal_{norm_name}_{feature_name}_{metric_at_k_name}.parquet')
+
         if os.path.exists(output_path):
             print(f'Skipping {norm_name}')
             continue
@@ -76,7 +82,7 @@ def _calculate_and_save_multimodal_metric(
             eval_songs_df=eval_songs_df,
             metric_at_k=metric_at_k
         )
-        os.makedirs(output_norm_dir, exist_ok=True)
+        # os.makedirs(output_path, exist_ok=True)
 
         eval_score_df.to_parquet(output_path, index=False)
 
@@ -103,8 +109,10 @@ def _calculate_and_save_multimodal_max_score_metric(
         output_path = os.path.join(
             target_dir,
             metric_at_k_name,
-            f'multimodal_{norm_name}_max_{metric_at_k_name}.parquet'
         )
+        os.makedirs(output_path, exist_ok=True)
+        output_path = os.path.join(output_path,
+                                   f'multimodal_{norm_name}_max_{metric_at_k_name}.parquet')
 
         if os.path.exists(output_path):
             print(f'Skipping {norm_name}')
